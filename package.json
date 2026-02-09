@@ -1,14 +1,1 @@
-{
-  "name": "mon-bot-whatsapp",
-  "version": "1.0.0",
-  "description": "Bot pour Koyeb",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
-  "dependencies": {
-    "@whiskeysockets/baileys": "latest",
-    "pino": "latest",
-    "qrcode-terminal": "^0.12.0"
-  }
-}
+{"name": "mon-bot-whatsapp", "version": "1.0.0", "description": "WhatsApp Task Manager Bot with Database", "main": "index.js", "scripts": {"start": "node index.js"}, "dependencies": {"@whiskeysockets/baileys": "latest", "pino": "latest", "qrcode-terminal": "^0.12.0", "sqlite3": "^5.1.6", "dotenv": "^16.0.0"}}
