@@ -1,38 +1,47 @@
-const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
-const pino = require("pino");
-const qrcode = require("qrcode-terminal");
+const express = require('express');
+const bodyParser = require('body-parser');
+const { Client } = require('whatsapp-web.js');
 
-async function startBot() {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info');
-    const { version } = await fetchLatestBaileysVersion();
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-    const sock = makeWASocket({
-        version,
-        logger: pino({ level: 'silent' }),
-        auth: state
-    });
+app.use(bodyParser.json());
 
-    sock.ev.on('creds.update', saveCreds);
+// Initialize WhatsApp client
+const client = new Client();
 
-    sock.ev.on('connection.update', (update) => {
-        const { connection, qr } = update;
-        if (qr) {
-            console.log("---------- SCANNE MOI VITE ----------");
-            qrcode.generate(qr, { small: true });
-            console.log("-------------------------------------");
-        }
-        if (connection === 'open') console.log("✅ BOT CONNECTÉ !");
-        if (connection === 'close') startBot();
-    });
+client.on('qr', (qr) => {
+    console.log('QR RECEIVED', qr);
+});
 
-    sock.ev.on('messages.upsert', async m => {
-        const msg = m.messages[0];
-        if (!msg.key.fromMe && msg.message) {
-            const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
-            if (text && text.toLowerCase() === 'salut') {
-                await sock.sendMessage(msg.key.remoteJid, { text: 'Salut ! Je réponds depuis Render 🚀' });
-            }
-        }
-    });
-}
-startBot();
+client.on('ready', () => {
+    console.log('Client is ready!');
+});
+
+client.initialize();
+
+// Task management storage
+let tasks = [];
+
+// Endpoint to add a task
+app.post('/task', (req, res) => {
+    const { userId, description } = req.body;
+    if (!userId || !description) {
+        return res.status(400).send('User ID and description are required.');
+    }
+    const task = { id: tasks.length + 1, userId, description, completed: false };
+    tasks.push(task);
+    res.status(201).send(task);
+});
+
+// Endpoint to get tasks by user ID
+app.get('/tasks/:userId', (req, res) => {
+    const { userId } = req.params;
+    const userTasks = tasks.filter(task => task.userId === userId);
+    res.send(userTasks);
+});
+
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
